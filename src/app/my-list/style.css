@@ -1,0 +1,31 @@
+
+.dataHolder{
+	width: 500px;
+}
+
+ul{
+
+}
+
+.item {
+	display: flex;
+	width: 100%;
+	background-color: lightblue;
+	padding: 5px;
+	border-radius: 5px;
+	margin-bottom: 5px;
+}
+
+.item p, .item textarea{
+	width: 100%;
+	margin: 5px 5px;
+}
+
+.item.selected{
+	border: 2px solid black;
+}
+
+.item button{
+	width: 20px;
+	margin: 0px;
+}
