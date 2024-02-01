@@ -192,7 +192,16 @@ export default function Home() {
       )}
       
       <div className="dataHolder">
-        <DisplayTree tree={tree} name="root" treeProps={{showOptions:(optionSelection == ''), curSelection:selection}} callbacks={{onClick:handleSelection, onEditData:handleEditData, onSelectOption:handleOptionSelection, onJoin:joinItem, onSplit:splitItem}}   />
+        <DisplayTree tree={tree} name="root" 
+          treeProps={{
+            showOptions:(optionSelection == ''), 
+            curSelection:selection
+          }} 
+          callbacks={{
+            onClick:handleSelection, 
+            onSelectOption:handleOptionSelection, 
+            editCallbacks:{onEditData: handleEditData, onJoin:joinItem, onSplit:splitItem}
+          }} />
       </div>
 
       <input value={newElement} onChange={e => setNewElement(e.target.value)} />
