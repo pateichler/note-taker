@@ -75,23 +75,14 @@ function ItemEdit(props: { item: Item, onExit: () => void, callbacks: ItemEditCa
 
 function DisplayItem(props: { item: Item, treeProps: TreeProps, callbacks: ItemCallbacks }) {
   const [edit, setEdit] = useState(false);
-  // const [editText, setEditText] = useState(props.item.data);
-
-  // if(edit == false && editText != props.item.data){
-  //     console.log("Not equal");
-  //     console.log("Data: " + props.item.data);
-  //     setEditText(props.item.data);
-  //     setEdit(true);
-  // }
 
   function handleEditClose() {
     setEdit(false);
-    // props.callbacks.onEditData(props.item.name,target.value);
   }
 
 
 
-  // console.log("Rendering item " + props.item.name);
+  console.log("Rendering item " + props.item.name);
 
   return (
     <li key={props.item.name}
