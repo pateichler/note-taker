@@ -1,17 +1,125 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Tree, {defaultTree} from './Tree'
-import DisplayTree from './TreeRenderer';
+import DisplayTree, {CurrentItem, ItemState} from './TreeRenderer';
 import "./style.css";
 
 var id = 10;
 
 export default function Home() {
   const [tree, setTree] = useState(defaultTree);
-  const [selection, setSelection] = useState('root');
+  // const [selection, setSelection] = useState('root');
   const [newElement, setNewElement] = useState('');
-  const [optionSelection, setOptionSelection] = useState('');
+  // const [optionSelection, setOptionSelection] = useState('');
+  const [curItem, setCurItem] = useState<CurrentItem>({name: 'root', state: 'select'});
+
+  function getCurItem(state: ItemState){
+    if(curItem.name === '' || curItem.state !== state)
+      return undefined;
+    
+    return curItem.name;
+  }
+
+  function resetCurItem(){
+    //TODO: maybe want to select last selected item
+    setCurItem({name: "root", state:"select"});
+  }
+
+  function setItemName(name: string){
+    setCurItem({...curItem, name: name});
+  }
+
+  function setItemState(state: ItemState){
+    setCurItem({...curItem, state: state});
+  }
+
+  function moveSelection(dir: 'up' | 'down' | 'left' | 'right'){
+    const element = tree[curItem.name];
+
+    if(curItem.state === 'select'){
+      switch(dir){
+        case 'up':
+          const parent = element.parent;
+          if(parent !== undefined)
+            setItemName(parent[0]);
+          break;
+        case 'down':
+          if(element.children.length > 0)
+            setItemName(element.children[0]);
+          break;
+        case 'left':
+          const prevSibling = getRelativeSibling(curItem.name, -1, tree);
+          if(prevSibling !== undefined)
+            setItemName(prevSibling);
+          break;
+        case 'right':
+          const nextSibling = getRelativeSibling(curItem.name, 1, tree);
+          if(nextSibling !== undefined)
+            setItemName(nextSibling);
+          break;
+      }
+    }
+  }
+
+  function editSelection(){
+    if(curItem.state === 'select'){
+      setItemState("edit");
+    }
+  }
+
+  function handleKeyPress(event: KeyboardEvent){
+    var stopProp = false;
+
+    if(event.metaKey){
+      stopProp = true;
+      switch(event.key){
+        case 'i':
+          moveSelection("up");
+          break;
+        case 'k':
+          moveSelection("down");
+          break;
+        case 'j':
+          moveSelection("left");
+          break;
+        case 'l':
+          moveSelection("right");
+          break;
+        case 'Enter':
+          editSelection();
+        default:
+          stopProp = false;
+      }
+    }
+
+    if(stopProp)
+      event.preventDefault();
+  }
+
+  useEffect(() => {
+    // attach the event listener
+    document.addEventListener('keydown', handleKeyPress);
+
+    // remove the event listener
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [handleKeyPress]);
+
+  function getRelativeSibling(name: string, dir: number, tree: Tree){
+    const parent = tree[name].parent;
+    if(parent === undefined)
+      return undefined;
+
+    const pElement = tree[parent[0]];
+    const index = pElement.children.indexOf(name) + dir;
+
+    if(index >= 0 && index < pElement.children.length)
+      return pElement.children[index];
+    
+    return undefined;
+  }
 
   function hasChild(parentName : string, targetName : string, tree: Tree){
     if(parentName == targetName)
@@ -97,9 +205,13 @@ export default function Home() {
   }
 
   function addData(){
+    const curSelection = getCurItem("select");
+    if(curSelection === undefined)
+      return;
+
     const newData = {...tree};
     
-    addItem(newElement, selection, newData);
+    addItem(newElement, curSelection, newData);
     
     setTree(newData);
     setNewElement('');
@@ -131,6 +243,7 @@ export default function Home() {
     id += 1;
     
     setTree(newTree);
+    setCurItem({name: newName, state: "edit"});
   }
 
   function joinItem(name : string){
@@ -149,6 +262,7 @@ export default function Home() {
     
     deleteItem(name, newTree);
     setTree(newTree);
+    setCurItem({name: itemAbove, state: "select"});
   }
 
   function handleEditData(id : string, data : string){
@@ -156,28 +270,46 @@ export default function Home() {
     const newData = {...tree};
     newData[id].data = data;
     setTree(newData);
+
+    if(getCurItem("edit") === id)
+      setCurItem({name: id, state: "select"});
+      // resetCurItem();
   }
 
   function handleSelection(name : string){
-    if(optionSelection == ''){
-      setSelection(name);  
+    const curOption = getCurItem("option");
+
+    if(curOption === undefined){
+      // setSelection(name);
+      setCurItem({name: name, state: "select"});
     }else{
       const newTree = {...tree};
-      setParent(optionSelection, name, newTree);
+      setParent(curOption, name, newTree);
       setTree(newTree);
-      setOptionSelection(''); 
+      // setOptionSelection(''); 
+      resetCurItem();
     }
   }
 
   function handleOptionSelection(name: string){
-    setOptionSelection(name); 
+    // setOptionSelection(name);
+    setCurItem({name: name, state: "option"});
   }
 
   function handleDelete(){
+    const curOption = getCurItem("option");
+    if(curOption === undefined)
+      return;
+
     const newTree = {...tree};
-    deleteItem(optionSelection, newTree);
-    setOptionSelection('');
+    deleteItem(curOption, newTree);
+    // setOptionSelection('');
+    resetCurItem();
     setTree(newTree);
+  }
+
+  function handleEdit(name: string){
+    setCurItem({name: name, state:"edit"});
   }
 
   return (
@@ -185,27 +317,37 @@ export default function Home() {
       <div>Hello world</div>
       
       <p>This is a list</p>
-      {optionSelection != '' ? (
+      
+      <div className="dataHolder">
+        <DisplayTree tree={tree} name="root" 
+          currentItem={curItem}
+          callbacks={{
+            onClick:handleSelection, 
+            onDoubleClick: handleEdit,
+            onSelectOption:handleOptionSelection, 
+            editCallbacks:{onEditData: handleEditData, onJoin:joinItem, onSplit:splitItem}
+          }}
+          isDescendantOfCurItem={false} // Todo: remove
+        />
+      </div>
+      
+      {getCurItem("select") ? (
+        <form onSubmit={(e) => {e.preventDefault(); addData();}}>
+          <input 
+            autoFocus 
+            value={newElement} 
+            onChange={e => setNewElement(e.target.value)} 
+            onBlur={(e) => {e.target.focus();}}
+          />
+          <input type="submit" value={"Add data"} />
+        </form>
+      ): (<></>)}
+
+      {getCurItem("option") !== undefined ? (
         <button onClick={handleDelete}>Delete item</button>
       ) : ( 
         <></> 
       )}
-      
-      <div className="dataHolder">
-        <DisplayTree tree={tree} name="root" 
-          treeProps={{
-            showOptions:(optionSelection == ''), 
-            curSelection:selection
-          }} 
-          callbacks={{
-            onClick:handleSelection, 
-            onSelectOption:handleOptionSelection, 
-            editCallbacks:{onEditData: handleEditData, onJoin:joinItem, onSplit:splitItem}
-          }} />
-      </div>
-
-      <input value={newElement} onChange={e => setNewElement(e.target.value)} />
-      <button onClick={addData}>Add data</button>
     </main>
   );
 }

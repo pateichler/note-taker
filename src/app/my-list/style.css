@@ -13,7 +13,9 @@ ul{
 	background-color: lightblue;
 	padding: 5px;
 	border-radius: 5px;
-	margin-bottom: 5px;
+	margin: 3px 0px;
+	border: 0;
+	/* box-sizing: border-box; */
 }
 
 .item p, .item textarea{
@@ -22,10 +24,24 @@ ul{
 }
 
 .item.selected{
-	border: 2px solid black;
+	outline: 2px solid black;
+	/* margin: 1px; */
+}
+
+ul.optioned .item{
+	background-color: rgb(115, 137, 144);
 }
 
 .item button{
 	width: 20px;
 	margin: 0px;
+}
+
+.edit-box{
+	resize: none;
+	font: 1rem "Times-Roman", Times;
+	margin: 0.5px !important;
+	padding: 4px;
+	box-sizing: border-box;
+	overflow: hidden;
 }

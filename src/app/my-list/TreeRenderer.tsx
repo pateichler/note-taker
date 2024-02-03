@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
-import Tree from './Tree'
+import Tree from './Tree';
+import TextareaAutosize from 'react-textarea-autosize';
+const classNames = require('classnames');
 
 type ItemFunction = (name: string) => void;
 
 interface Item {
   name: string,
-  data: string
+  data: string,
+  isDescendantOfCurItem: boolean
 }
 
-interface TreeProps {
-  showOptions: boolean,
-  curSelection: string
+export type ItemState = "select" | "edit" | "option" | ""
+
+export interface CurrentItem {
+  name: string,
+  state: ItemState
 }
+
+// interface TreeProps {
+//   curItem: {
+//     name: string,
+//     state: ItemState
+//   }
+//   // curSelection: string,
+//   // curEdit: string
+// }
 
 interface ItemEditCallbacks {
   onJoin: ItemFunction,
@@ -21,6 +35,7 @@ interface ItemEditCallbacks {
 
 interface ItemCallbacks {
   onClick: ItemFunction,
+  onDoubleClick: ItemFunction,
   onSelectOption: ItemFunction,
   editCallbacks: ItemEditCallbacks
 }
@@ -56,8 +71,10 @@ function ItemEdit(props: { item: Item, onExit: () => void, callbacks: ItemEditCa
   }
 
   return (
-    <textarea
+    <TextareaAutosize 
       defaultValue={props.item.data}
+      className='edit-box'
+      minRows={1}
       autoFocus
       onChange={(e) => {
         setEditText(e.target.value);
@@ -66,54 +83,105 @@ function ItemEdit(props: { item: Item, onExit: () => void, callbacks: ItemEditCa
         handleKeyInput(e);
       }}
       onBlur={(e) => {
-        saveData();
+        // saveData();
       }}
     />
+    // <textarea
+    //   defaultValue={props.item.data}
+    //   autoFocus
+    //   onChange={(e) => {
+    //     setEditText(e.target.value);
+    //   }}
+    //   onKeyDown={(e) => {
+    //     handleKeyInput(e);
+    //   }}
+    //   onBlur={(e) => {
+    //     saveData();
+    //   }}
+    // />
   )
 
 }
 
-function DisplayItem(props: { item: Item, treeProps: TreeProps, callbacks: ItemCallbacks }) {
-  const [edit, setEdit] = useState(false);
+function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: ItemCallbacks }) {
+  // const [edit, setEdit] = useState(false);
+  const isCurItem = (props.currentItem.name === props.item.name);
+  // function isCurItem(){
+  //   if(props.treeProps.curItem === undefined)
+  //     return false;
+    
+  //   return (props.treeProps.curItem.name === props.item.name);
+  // }
 
-  function handleEditClose() {
-    setEdit(false);
+  // function isSelected(){
+  //   return (isCurItem && props.treeProps.curItem.state === "select");
+  // }
+
+  // function isEditing(){
+  //   return (isCurItem && props.treeProps.curItem.state === "edit");
+  // }
+
+  function isItem(state: ItemState){
+    return (isCurItem && props.currentItem.state === state);
   }
 
+  function handleEdit(state: boolean){
 
+  }
+
+  function handleEditClose() {
+    handleEdit(false);
+  }
+
+  const itemClasses = classNames(
+    'item',
+    {
+      'selected': isItem('select'),
+      'optioned': isItem('option')
+    }
+  )
 
   console.log("Rendering item " + props.item.name);
 
+  //TODO: If we want to start edit at double click selection, change paragraph element into a readonly input element and add the onDoubleClick to it. Then on the event read 
+  // the selection start of currentTarget and either pass it to the top level app or store it as a ref in this element and pass it ItemElement when creating. 
+
   return (
     <li key={props.item.name}
-      onClick={() => { props.callbacks.onClick(props.item.name) }}
-      onDoubleClick={() => { setEdit(true) }}
-      className={"item " + (props.treeProps.curSelection == props.item.name ? 'selected' : '')}
+      onClick={() => { if(isItem("edit") == false) {props.callbacks.onClick(props.item.name)} }}
+      onDoubleClick={(e) => {props.callbacks.onDoubleClick(props.item.name); }}
+      className={itemClasses}
     >
-      { edit ? (
+      { isItem("edit") ? (
           <ItemEdit item={props.item} onExit={handleEditClose} callbacks={props.callbacks.editCallbacks} />
       ): (<p>{props.item.data}</p>)
       }
 
-      { props.treeProps.showOptions ? (
-        <button onClick={() => props.callbacks.onSelectOption(props.item.name)} style={{ marginLeft: 10 + 'px' }}>:</button>
+      { props.currentItem.state !== "option" ? (
+        <button onClick={(e) => {e.stopPropagation(); props.callbacks.onSelectOption(props.item.name);}} style={{ marginLeft: 10 + 'px' }}>:</button>
         ) : ( <></> )
       }
     </li >
   )
 }
 
-export default function DisplayTree(props: { name: string, tree: Tree, treeProps: TreeProps, callbacks: ItemCallbacks }) {
+//TODO: Make isDescendantOfCurItem have default value of false
+export default function DisplayTree(props: { name: string, tree: Tree, currentItem: CurrentItem, callbacks: ItemCallbacks, isDescendantOfCurItem: boolean}) {
   const obj = props.tree[props.name];
+  const descendant = props.isDescendantOfCurItem || props.name == props.currentItem.name;
+
+  const cnames = classNames(
+    {"optioned": (props.currentItem.name === props.name && props.currentItem.state === "option")}
+  )
 
   return (
-    <ul>
-      <DisplayItem item={{ name: props.name, data: obj.data }} treeProps={props.treeProps} callbacks={props.callbacks} />
+    <ul className={cnames}>
+      <DisplayItem item={{ name: props.name, data: obj.data, isDescendantOfCurItem: descendant }} currentItem={props.currentItem} callbacks={props.callbacks} />
       
       {obj.children.length > 0 ? (
         obj.children.map((child) => {
           return (
-            <DisplayTree key={child.toString()} {...props} name={child.toString()} />
+            <DisplayTree key={child.toString()} {...props} name={child.toString()} isDescendantOfCurItem={descendant} />
           );
         })
       ) : (
