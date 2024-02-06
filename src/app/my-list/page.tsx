@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Tree, {defaultTree} from './Tree'
 import DisplayTree, {CurrentItem, ItemState} from './TreeRenderer';
+import Prompt from './Prompt';
 import "./style.css";
 
 var id = 10;
@@ -10,7 +11,7 @@ var id = 10;
 export default function Home() {
   const [tree, setTree] = useState(defaultTree);
   // const [selection, setSelection] = useState('root');
-  const [newElement, setNewElement] = useState('');
+  
   // const [optionSelection, setOptionSelection] = useState('');
   const [curItem, setCurItem] = useState<CurrentItem>({name: 'root', state: 'select'});
 
@@ -204,17 +205,17 @@ export default function Home() {
     id += 1;
   }
 
-  function addData(){
+  function addData(data: string){
     const curSelection = getCurItem("select");
     if(curSelection === undefined)
       return;
 
     const newData = {...tree};
     
-    addItem(newElement, curSelection, newData);
+    addItem(data, curSelection, newData);
     
     setTree(newData);
-    setNewElement('');
+    // setNewElement('');
   }
 
   function splitItem(name : string, pos : number){
@@ -331,17 +332,10 @@ export default function Home() {
         />
       </div>
       
-      {getCurItem("select") ? (
-        <form onSubmit={(e) => {e.preventDefault(); addData();}}>
-          <input 
-            autoFocus 
-            value={newElement} 
-            onChange={e => setNewElement(e.target.value)} 
-            onBlur={(e) => {e.target.focus();}}
-          />
-          <input type="submit" value={"Add data"} />
-        </form>
-      ): (<></>)}
+      <Prompt 
+        addItem={addData}  
+        curItem={curItem}
+      />
 
       {getCurItem("option") !== undefined ? (
         <button onClick={handleDelete}>Delete item</button>
