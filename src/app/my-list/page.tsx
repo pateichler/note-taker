@@ -13,7 +13,7 @@ export default function Home() {
   // const [selection, setSelection] = useState('root');
   
   // const [optionSelection, setOptionSelection] = useState('');
-  const [curItem, setCurItem] = useState<CurrentItem>({name: 'root', state: 'select'});
+  const [curItem, setCurItem] = useState<CurrentItem>({name: 'root', state: 'select', onScreen: true});
 
   function getCurItem(state: ItemState){
     if(curItem.name === '' || curItem.state !== state)
@@ -24,7 +24,7 @@ export default function Home() {
 
   function resetCurItem(){
     //TODO: maybe want to select last selected item
-    setCurItem({name: "root", state:"select"});
+    setCurItem({name: "root", state:"select", onScreen: true});
   }
 
   function setItemName(name: string){
@@ -218,6 +218,10 @@ export default function Home() {
     // setNewElement('');
   }
 
+  function getData(name: string){
+    return tree[name].data;
+  }
+
   function splitItem(name : string, pos : number){
     console.log("Split item");
     const newTree = {...tree};
@@ -244,7 +248,7 @@ export default function Home() {
     id += 1;
     
     setTree(newTree);
-    setCurItem({name: newName, state: "edit"});
+    setCurItem({...curItem, name: newName, state: "edit"});
   }
 
   function joinItem(name : string){
@@ -263,7 +267,7 @@ export default function Home() {
     
     deleteItem(name, newTree);
     setTree(newTree);
-    setCurItem({name: itemAbove, state: "select"});
+    setCurItem({...curItem, name: itemAbove, state: "select"});
   }
 
   function handleEditData(id : string, data : string){
@@ -273,7 +277,7 @@ export default function Home() {
     setTree(newData);
 
     if(getCurItem("edit") === id)
-      setCurItem({name: id, state: "select"});
+      setCurItem({...curItem, name: id, state: "select"});
       // resetCurItem();
   }
 
@@ -282,7 +286,7 @@ export default function Home() {
 
     if(curOption === undefined){
       // setSelection(name);
-      setCurItem({name: name, state: "select"});
+      setCurItem({...curItem, name: name, state: "select"});
     }else{
       const newTree = {...tree};
       setParent(curOption, name, newTree);
@@ -294,7 +298,7 @@ export default function Home() {
 
   function handleOptionSelection(name: string){
     // setOptionSelection(name);
-    setCurItem({name: name, state: "option"});
+    setCurItem({...curItem, name: name, state: "option"});
   }
 
   function handleDelete(){
@@ -310,7 +314,13 @@ export default function Home() {
   }
 
   function handleEdit(name: string){
-    setCurItem({name: name, state:"edit"});
+    setCurItem({...curItem, name: name, state:"edit"});
+  }
+
+  function handleScreenChange(onScreen: boolean){
+    console.log(curItem);
+    setCurItem({...curItem, onScreen: onScreen});
+    console.log(curItem);
   }
 
   return (
@@ -325,7 +335,8 @@ export default function Home() {
           callbacks={{
             onClick:handleSelection, 
             onDoubleClick: handleEdit,
-            onSelectOption:handleOptionSelection, 
+            onSelectOption:handleOptionSelection,
+            onItemScreen:handleScreenChange,
             editCallbacks:{onEditData: handleEditData, onJoin:joinItem, onSplit:splitItem}
           }}
           isDescendantOfCurItem={false} // Todo: remove
@@ -333,7 +344,8 @@ export default function Home() {
       </div>
       
       <Prompt 
-        addItem={addData}  
+        addItem={addData}
+        getData={getData}
         curItem={curItem}
       />
 

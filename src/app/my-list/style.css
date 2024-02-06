@@ -45,3 +45,28 @@ ul.optioned .item{
 	box-sizing: border-box;
 	overflow: hidden;
 }
+
+#prompt-selection{
+	position: fixed;
+	top: 0;
+	background-color: white;
+	width: 100%;
+	padding: 10px;
+}
+
+#prompt-message{
+	position: fixed;
+	bottom: 0;
+	
+	width: 100%;
+	display: flex;
+	flex: 1;
+  	flex-direction: row;
+	/* padding: 10; */
+}
+
+#prompt-message .message{
+	width: 100%;
+	margin: 10px;
+	/* margin: 10px; */
+}

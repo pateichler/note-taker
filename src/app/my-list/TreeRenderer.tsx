@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Tree from './Tree';
 import TextareaAutosize from 'react-textarea-autosize';
 const classNames = require('classnames');
@@ -15,7 +15,8 @@ export type ItemState = "select" | "edit" | "option" | ""
 
 export interface CurrentItem {
   name: string,
-  state: ItemState
+  state: ItemState,
+  onScreen: boolean
 }
 
 // interface TreeProps {
@@ -37,6 +38,7 @@ interface ItemCallbacks {
   onClick: ItemFunction,
   onDoubleClick: ItemFunction,
   onSelectOption: ItemFunction,
+  onItemScreen: (onScreen: boolean) => void,
   editCallbacks: ItemEditCallbacks
 }
 
@@ -106,6 +108,7 @@ function ItemEdit(props: { item: Item, onExit: () => void, callbacks: ItemEditCa
 function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: ItemCallbacks }) {
   // const [edit, setEdit] = useState(false);
   const isCurItem = (props.currentItem.name === props.item.name);
+  const itemRef = useRef<HTMLLIElement>(null);
   // function isCurItem(){
   //   if(props.treeProps.curItem === undefined)
   //     return false;
@@ -133,6 +136,27 @@ function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: I
     handleEdit(false);
   }
 
+  function handleScroll() {
+    if(itemRef.current !== null){
+      const rect = itemRef.current.getBoundingClientRect();
+      console.log(rect.top, rect.bottom);
+      console.log("Current: " + props.currentItem.onScreen);
+      const onScreen = rect.top > 0 || rect.bottom > 150;
+      
+      if(props.currentItem.onScreen != onScreen)
+        props.callbacks.onItemScreen(onScreen);
+    }
+  }
+
+  useEffect(() => {
+    if(isCurItem){
+      console.log(props.currentItem.onScreen);
+      handleScroll();
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [isCurItem, props.currentItem]);
+
   const itemClasses = classNames(
     'item',
     {
@@ -148,9 +172,10 @@ function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: I
 
   return (
     <li key={props.item.name}
-      onClick={() => { if(isItem("edit") == false) {props.callbacks.onClick(props.item.name)} }}
+      onClick={(e) => { if(isItem("edit") == false) {props.callbacks.onClick(props.item.name)} }}
       onDoubleClick={(e) => {props.callbacks.onDoubleClick(props.item.name); }}
       className={itemClasses}
+      ref={itemRef}
     >
       { isItem("edit") ? (
           <ItemEdit item={props.item} onExit={handleEditClose} callbacks={props.callbacks.editCallbacks} />
