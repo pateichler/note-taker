@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Tree from './Tree';
-import TextareaAutosize from 'react-textarea-autosize';
+import ItemEdit, {ItemEditCallbacks} from './ItemEdit';
+
 const classNames = require('classnames');
 
 type ItemFunction = (name: string) => void;
@@ -28,87 +29,27 @@ export interface CurrentItem {
 //   // curEdit: string
 // }
 
-interface ItemEditCallbacks {
-  onJoin: ItemFunction,
-  onEditData: (name: string, newData: string) => void,
-  onSplit: (name: string, position: number) => void
-}
+
 
 interface ItemCallbacks {
   onClick: ItemFunction,
   onDoubleClick: ItemFunction,
   onSelectOption: ItemFunction,
-  onItemScreen: (onScreen: boolean) => void,
+  onItemScreen: (onScreen: boolean, textAreaRef: HTMLTextAreaElement | null) => void,
   editCallbacks: ItemEditCallbacks
 }
 
 
-function ItemEdit(props: { item: Item, onExit: () => void, callbacks: ItemEditCallbacks }) {
 
-  const [editText, setEditText] = useState(props.item.data);
 
-  function saveData() {
-    props.callbacks.onEditData(props.item.name, editText);
-    props.onExit();
-  }
-
-  function handleKeyInput(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.code === "Backspace" && e.currentTarget.selectionStart == 0)
-      props.callbacks.onJoin(props.item.name);
-    else if (e.code === "Enter") {
-      e.preventDefault();
-
-      if (e.nativeEvent.shiftKey) {
-        if (e.currentTarget.selectionStart == 0)
-          return;
-
-        // e.currentTarget.value = e.currentTarget.value.substring(0, e.currentTarget.selectionStart);
-        // setEditText(editText.substring(0, e.currentTarget.selectionStart));
-        props.callbacks.onSplit(props.item.name, e.currentTarget.selectionStart);
-        props.onExit();
-      } else {
-        saveData();
-      }
-    }
-  }
-
-  return (
-    <TextareaAutosize 
-      defaultValue={props.item.data}
-      className='edit-box'
-      minRows={1}
-      autoFocus
-      onChange={(e) => {
-        setEditText(e.target.value);
-      }}
-      onKeyDown={(e) => {
-        handleKeyInput(e);
-      }}
-      onBlur={(e) => {
-        // saveData();
-      }}
-    />
-    // <textarea
-    //   defaultValue={props.item.data}
-    //   autoFocus
-    //   onChange={(e) => {
-    //     setEditText(e.target.value);
-    //   }}
-    //   onKeyDown={(e) => {
-    //     handleKeyInput(e);
-    //   }}
-    //   onBlur={(e) => {
-    //     saveData();
-    //   }}
-    // />
-  )
-
-}
-
-function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: ItemCallbacks }) {
+function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: ItemCallbacks, editData: string }) {
   // const [edit, setEdit] = useState(false);
   const isCurItem = (props.currentItem.name === props.item.name);
   const itemRef = useRef<HTMLLIElement>(null);
+  const editBoxRef = useRef<HTMLTextAreaElement>(null);
+
+  const [itemHeight, setItemHeight] = useState(0);
+
   // function isCurItem(){
   //   if(props.treeProps.curItem === undefined)
   //     return false;
@@ -128,29 +69,35 @@ function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: I
     return (isCurItem && props.currentItem.state === state);
   }
 
-  function handleEdit(state: boolean){
+  // function handleEdit(state: boolean){
 
-  }
+  // }
 
-  function handleEditClose() {
-    handleEdit(false);
-  }
+  // function handleEditClose() {
+  //   handleEdit(false);
+  // }
+
+  
 
   function handleScroll() {
     if(itemRef.current !== null){
       const rect = itemRef.current.getBoundingClientRect();
-      console.log(rect.top, rect.bottom);
-      console.log("Current: " + props.currentItem.onScreen);
-      const onScreen = rect.top > 0 || rect.bottom > 150;
       
-      if(props.currentItem.onScreen != onScreen)
-        props.callbacks.onItemScreen(onScreen);
+      
+      const onScreen = rect.top > 0 || rect.bottom > 150;
+
+      if(props.currentItem.onScreen != onScreen){
+        props.callbacks.onItemScreen(onScreen, editBoxRef.current);
+        
+        if(onScreen == false)
+          setItemHeight(rect.height - 10); // Todo: automatically account for padding
+      }
+        
     }
   }
 
   useEffect(() => {
     if(isCurItem){
-      console.log(props.currentItem.onScreen);
       handleScroll();
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
@@ -170,6 +117,17 @@ function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: I
   //TODO: If we want to start edit at double click selection, change paragraph element into a readonly input element and add the onDoubleClick to it. Then on the event read 
   // the selection start of currentTarget and either pass it to the top level app or store it as a ref in this element and pass it ItemElement when creating. 
 
+  if(isItem("edit") && props.currentItem.onScreen == false)
+    return (
+      <li key={props.item.name}
+        className={itemClasses}
+        ref={itemRef}
+        style={{height: itemHeight, backgroundColor: "red"}}
+      >
+
+      </li>
+    )
+
   return (
     <li key={props.item.name}
       onClick={(e) => { if(isItem("edit") == false) {props.callbacks.onClick(props.item.name)} }}
@@ -178,7 +136,7 @@ function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: I
       ref={itemRef}
     >
       { isItem("edit") ? (
-          <ItemEdit item={props.item} onExit={handleEditClose} callbacks={props.callbacks.editCallbacks} />
+          <ItemEdit curItem={props.currentItem} callbacks={props.callbacks.editCallbacks} editData={props.editData} />
       ): (<p>{props.item.data}</p>)
       }
 
@@ -191,7 +149,7 @@ function DisplayItem(props: { item: Item, currentItem: CurrentItem, callbacks: I
 }
 
 //TODO: Make isDescendantOfCurItem have default value of false
-export default function DisplayTree(props: { name: string, tree: Tree, currentItem: CurrentItem, callbacks: ItemCallbacks, isDescendantOfCurItem: boolean}) {
+export default function DisplayTree(props: { name: string, tree: Tree, currentItem: CurrentItem, callbacks: ItemCallbacks, isDescendantOfCurItem: boolean, editData: string}) {
   const obj = props.tree[props.name];
   const descendant = props.isDescendantOfCurItem || props.name == props.currentItem.name;
 
@@ -201,7 +159,7 @@ export default function DisplayTree(props: { name: string, tree: Tree, currentIt
 
   return (
     <ul className={cnames}>
-      <DisplayItem item={{ name: props.name, data: obj.data, isDescendantOfCurItem: descendant }} currentItem={props.currentItem} callbacks={props.callbacks} />
+      <DisplayItem item={{ name: props.name, data: obj.data, isDescendantOfCurItem: descendant }} currentItem={props.currentItem} callbacks={props.callbacks} editData={props.editData} />
       
       {obj.children.length > 0 ? (
         obj.children.map((child) => {

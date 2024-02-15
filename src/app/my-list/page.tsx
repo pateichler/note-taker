@@ -5,6 +5,7 @@ import Tree, {defaultTree} from './Tree'
 import DisplayTree, {CurrentItem, ItemState} from './TreeRenderer';
 import Prompt from './Prompt';
 import "./style.css";
+import { ItemEditCallbacks } from './ItemEdit';
 
 var id = 10;
 
@@ -14,6 +15,9 @@ export default function Home() {
   
   // const [optionSelection, setOptionSelection] = useState('');
   const [curItem, setCurItem] = useState<CurrentItem>({name: 'root', state: 'select', onScreen: true});
+
+  //TODO: replace in future
+  const [editData, setEditData] = useState("");
 
   function getCurItem(state: ItemState){
     if(curItem.name === '' || curItem.state !== state)
@@ -63,11 +67,11 @@ export default function Home() {
     }
   }
 
-  function editSelection(){
-    if(curItem.state === 'select'){
-      setItemState("edit");
-    }
-  }
+  // function editSelection(){
+  //   if(curItem.state === 'select'){
+  //     setItemState("edit");
+  //   }
+  // }
 
   function handleKeyPress(event: KeyboardEvent){
     var stopProp = false;
@@ -88,7 +92,7 @@ export default function Home() {
           moveSelection("right");
           break;
         case 'Enter':
-          editSelection();
+          handleEdit(curItem.name);
         default:
           stopProp = false;
       }
@@ -270,15 +274,25 @@ export default function Home() {
     setCurItem({...curItem, name: itemAbove, state: "select"});
   }
 
-  function handleEditData(id : string, data : string){
-    console.log(id);
-    const newData = {...tree};
-    newData[id].data = data;
-    setTree(newData);
+  // function handleEditData(id : string, data : string){
+  //   console.log(id);
+  //   const newData = {...tree};
+  //   newData[id].data = data;
+  //   setTree(newData);
 
-    if(getCurItem("edit") === id)
-      setCurItem({...curItem, name: id, state: "select"});
-      // resetCurItem();
+  //   if(getCurItem("edit") === id)
+  //     setCurItem({...curItem, name: id, state: "select"});
+  //     // resetCurItem();
+  // }
+
+  function handleSaveData(){
+    const newData = {...tree};
+    
+    newData[curItem.name].data = editData;
+    setTree(newData);
+    setEditData("");
+
+    setCurItem({...curItem, state: "select"});
   }
 
   function handleSelection(name : string){
@@ -315,13 +329,18 @@ export default function Home() {
 
   function handleEdit(name: string){
     setCurItem({...curItem, name: name, state:"edit"});
+    setEditData(tree[name].data);
   }
 
-  function handleScreenChange(onScreen: boolean){
+  function handleScreenChange(onScreen: boolean, textAreaRef: HTMLTextAreaElement | null){
+    console.log("Screen change!");
+    console.log(textAreaRef);
     console.log(curItem);
     setCurItem({...curItem, onScreen: onScreen});
     console.log(curItem);
   }
+
+  var editCallbacks : ItemEditCallbacks = {onSaveData: handleSaveData, onJoin:joinItem, onSplit:splitItem, onChange:setEditData}
 
   return (
     <main >
@@ -337,9 +356,10 @@ export default function Home() {
             onDoubleClick: handleEdit,
             onSelectOption:handleOptionSelection,
             onItemScreen:handleScreenChange,
-            editCallbacks:{onEditData: handleEditData, onJoin:joinItem, onSplit:splitItem}
+            editCallbacks:editCallbacks
           }}
           isDescendantOfCurItem={false} // Todo: remove
+          editData={editData}
         />
       </div>
       
@@ -347,6 +367,8 @@ export default function Home() {
         addItem={addData}
         getData={getData}
         curItem={curItem}
+        editCallbacks={editCallbacks}
+        editData={editData}
       />
 
       {getCurItem("option") !== undefined ? (
