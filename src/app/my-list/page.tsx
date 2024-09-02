@@ -344,10 +344,6 @@ export default function Home() {
 
   return (
     <main >
-      <div>Hello world</div>
-      
-      <p>This is a list</p>
-      
       <div className="dataHolder">
         <DisplayTree tree={tree} name="root" 
           currentItem={curItem}
