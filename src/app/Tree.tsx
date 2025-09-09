@@ -15,27 +15,37 @@ function setParent(tree : Tree, name: string){
   
 const initTree : Tree = {
     "root": {
-        "data": "subject",
+        "data": "This is a test application for a proto type note system.",
         "children": ["1"]
     },
   
     "1": {
-        "data": "Test parent",
-        "children": ["2", "3"]
+        "data": "Controls",
+        "children": ["2", "3", "4", "5", "6"]
     },
   
     "2": {
-        "data": "Test child 1",
-        "children": ["4"]
-    },
-  
-    "3": {
-        "data": "Test child 2",
+        "data": "cmd + enter: Edit current selected note.",
         "children": []
     },
   
+    "3": {
+        "data": "cmd + I: Move selected note to parent.",
+        "children": []
+    },
+
     "4": {
-        "data": "Test sub child",
+        "data": "cmd + K: Move selected note to first child.",
+        "children": []
+    },
+
+    "5": {
+        "data": "cmd + L: Move selected note to next sibling.",
+        "children": []
+    },
+
+    "6": {
+        "data": "cmd + J: Move selected note to previous sibling.",
         "children": []
     },
 }
