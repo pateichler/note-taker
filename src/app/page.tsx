@@ -194,6 +194,15 @@ export default function Home() {
     removeItemParentReferences(name, tree);
 
     deleteItemRecursive(name, tree);
+
+    // Check if root is deleted ... if so add new root
+    if(Object.keys(tree).length === 0){
+      tree["root"] = {
+        "data": "Untitled",
+        "children": []
+      }
+    }
+      
     // setTree(newData);
   }
 
