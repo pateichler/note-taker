@@ -1,6 +1,6 @@
 # Note Taker
 
-This is a playground for prototyping a note taking web application and learning ReactJS. It is currently intended as a personal project.
+This is a playground for prototyping a note taking web application and learning ReactJS. It is currently intended as a test project, so the project is messy.
 
 Below is a sample of the prototype note app.
 
